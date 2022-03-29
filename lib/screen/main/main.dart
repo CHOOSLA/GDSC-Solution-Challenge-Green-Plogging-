@@ -1,14 +1,29 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:gdsc_solution/components/mainMapDrawer.dart';
+import 'package:gdsc_solution/components/semiCircleWidget.dart';
+import 'package:gdsc_solution/screen/main/main_dialog.dart';
+import 'package:gdsc_solution/screen/main/sliding_body.dart';
+import 'package:gdsc_solution/screen/main/sliding_panel.dart';
+import 'package:gdsc_solution/theme/custom_color.dart';
+import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:location/location.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 import 'package:gdsc_solution/model/geo_entry.dart';
+import 'package:gdsc_solution/model/geo_entry.dart';
+
+import '../../model/map_model.dart';
 
 class mapMain extends StatefulWidget {
   mapMain({Key? key}) : super(key: key);
@@ -20,216 +35,169 @@ class mapMain extends StatefulWidget {
 class _mapMainState extends State<mapMain> {
   _mapMainState();
 
-  Completer<GoogleMapController> _controller = Completer();
-  Map<PolylineId, Polyline> polylines = <PolylineId, Polyline>{};
-  PolylineId? selectedPolyline;
+  //슬라이드 패널 컨트롤러
+  final panelController = PanelController();
 
-  final Set<Polyline> polyline = {};
-  Location _location = Location();
-  GoogleMapController? _mapController;
-  LatLng _center = const LatLng(0, 0);
-  List<LatLng> route = [];
-
-  double _dist = 0;
-  String _displayTime = "";
-  int _time = 0;
-  int _lastTime = 0;
-  double _speed = 0;
-  double _avgSpeed = 0;
-  int _speedCounter = 0;
-
-  final StopWatchTimer _stopWatchTimer = StopWatchTimer();
-
-  @override
-  void initState() {
-    super.initState();
-    _stopWatchTimer.onExecute.add(StopWatchExecute.start);
-  }
-
-  @override
-  void dispose() async {
-    super.dispose();
-    await _stopWatchTimer.dispose(); // Need to call dispose function.
-  }
-
-  void _onPolylineTapped(PolylineId polylineId) {
-    setState(() {
-      selectedPolyline = polylineId;
-    });
-  }
-
-  void _remove(PolylineId polylineId) {
-    setState(() {
-      if (polylines.containsKey(polylineId)) {
-        polylines.remove(polylineId);
-      }
-      selectedPolyline = null;
-    });
-  }
-
-  void _add() {
-    final PolylineId polylineId = PolylineId('polyline');
-
-    final Polyline polyline = Polyline(
-      polylineId: polylineId,
-      consumeTapEvents: true,
-      color: Colors.orange,
-      width: 5,
-      points: _createPoints(),
-      onTap: () {
-        _onPolylineTapped(polylineId);
-      },
-    );
-  }
-
-  List<LatLng> _createPoints() {
-    final List<LatLng> points = <LatLng>[];
-
-    points.add(_createLatLng(51.4816, -3.1791));
-    points.add(_createLatLng(53.0430, -2.9925));
-    points.add(_createLatLng(53.1396, -4.2739));
-    points.add(_createLatLng(52.4153, -4.0829));
-    return points;
-  }
-
-  LatLng _createLatLng(double lat, double lng) {
-    return LatLng(lat, lng);
-  }
-
-  void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
-    double appendDist;
-
-    _location.onLocationChanged.listen((event) {
-      LatLng loc = LatLng(event.latitude!, event.longitude!);
-      _mapController!.animateCamera(CameraUpdate.newCameraPosition(
-          CameraPosition(target: loc, zoom: 15)));
-
-      if (route.length > 0) {
-        appendDist = Geolocator.distanceBetween(route.last.latitude,
-            route.last.longitude, loc.latitude, loc.longitude);
-        _dist = _dist + appendDist;
-        int timeDuration = (_time - _lastTime);
-
-        if (_lastTime != null && timeDuration != 0) {
-          _speed = (appendDist / (timeDuration / 100)) * 3.6;
-          if (_speed != 0) {
-            _avgSpeed = _avgSpeed + _speed;
-            _speedCounter++;
-          }
-        }
-      }
-      _lastTime = _time;
-      route.add(loc);
-
-      polyline.add(Polyline(
-          polylineId: PolylineId(event.toString()),
-          visible: true,
-          points: route,
-          width: 5,
-          startCap: Cap.roundCap,
-          endCap: Cap.roundCap,
-          color: Colors.deepOrange));
-
-      setState(() {});
-    });
-  }
+  double _fabHeight = 15.0;
+  double _fabHeightClosed = 15.0;
 
   @override
   Widget build(BuildContext context) {
     //Check IOS Platform
     final bool isIOS = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+        overlays: [SystemUiOverlay.bottom]);
+
+    final double _screenWidth = MediaQuery.of(context).size.width;
+    final double _screenHeight = MediaQuery.of(context).size.height;
+
+    //앱바 높이
+    final double _appBarHeight = _screenHeight * 0.065;
+
+    //GetX 상태관리
+    Get.put(MapModel());
+    final getController = Get.put(Entry());
+    getController.appbarHeight = _appBarHeight;
+
+    MapModel.to.panelHeight.value = _screenHeight * 0.4;
+    MapModel.to.panelWidth.value = _screenWidth;
+
     return Scaffold(
+        drawer: Container(
+            width: _screenWidth * 0.7,
+            child: Drawer(child: new mainMapDrawer())),
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(_appBarHeight),
+          child: AppBar(
+            iconTheme: IconThemeData(color: Colors.black),
+            backgroundColor: Colors.white,
+            elevation: 0,
+            title: Image.asset('assets/logo.png', width: _appBarHeight),
+            centerTitle: true,
+            actions: [
+              IconButton(
+                onPressed: () => {Get.dialog(new mainDialog())},
+                icon: const Icon(Icons.help),
+                color: CustomColor.primary,
+              )
+            ],
+          ),
+        ),
         body: Stack(children: [
-      Container(
-          child: GoogleMap(
-        polylines: polyline,
-        zoomControlsEnabled: false,
-        onMapCreated: _onMapCreated,
-        myLocationEnabled: true,
-        initialCameraPosition: CameraPosition(target: _center, zoom: 11),
-      )),
-      Align(
-          alignment: Alignment.bottomCenter,
-          child: Container(
-            width: double.infinity,
-            margin: EdgeInsets.fromLTRB(10, 0, 10, 40),
-            height: 140,
-            padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
-            decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(10)),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      children: [
-                        Text("SPEED (KM/H)",
-                            style: GoogleFonts.montserrat(
-                                fontSize: 10, fontWeight: FontWeight.w300)),
-                        Text(_speed.toStringAsFixed(2),
-                            style: GoogleFonts.montserrat(
-                                fontSize: 30, fontWeight: FontWeight.w300))
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        Text("TIME",
-                            style: GoogleFonts.montserrat(
-                                fontSize: 10, fontWeight: FontWeight.w300)),
-                        StreamBuilder<int>(
-                          stream: _stopWatchTimer.rawTime,
-                          initialData: 0,
-                          builder: (context, snap) {
-                            _time = snap.data!;
-                            _displayTime =
-                                StopWatchTimer.getDisplayTimeHours(_time) +
-                                    ":" +
-                                    StopWatchTimer.getDisplayTimeMinute(_time) +
-                                    ":" +
-                                    StopWatchTimer.getDisplayTimeSecond(_time);
-                            return Text(_displayTime,
-                                style: GoogleFonts.montserrat(
-                                    fontSize: 30, fontWeight: FontWeight.w300));
-                          },
-                        )
-                      ],
-                    ),
-                    Column(
-                      children: [
-                        Text("DISTANCE (KM)",
-                            style: GoogleFonts.montserrat(
-                                fontSize: 10, fontWeight: FontWeight.w300)),
-                        Text((_dist / 1000).toStringAsFixed(2),
-                            style: GoogleFonts.montserrat(
-                                fontSize: 30, fontWeight: FontWeight.w300))
-                      ],
-                    )
-                  ],
-                ),
-                Divider(),
-                IconButton(
-                  icon: Icon(
-                    Icons.stop_circle_outlined,
-                    size: 50,
-                    color: Colors.redAccent,
-                  ),
-                  padding: EdgeInsets.all(0),
-                  onPressed: () async {
-                    Entry en = Entry(
-                        date: DateFormat.yMMMMd('en_US').format(DateTime.now()),
-                        duration: _displayTime,
-                        speed:
-                            _speedCounter == 0 ? 0 : _avgSpeed / _speedCounter,
-                        distance: _dist);
-                    Navigator.pop(context, en);
-                  },
-                )
-              ],
+          Obx(
+            () => SlidingUpPanel(
+              isDraggable: MapModel.to.slidingDraggable.value,
+              maxHeight: _screenHeight * 0.4,
+              minHeight: MapModel.to.slidingPanelMinH.value,
+              controller: panelController,
+              parallaxEnabled: true,
+              parallaxOffset: .6,
+              panelBuilder: (controller) => PanelWidget(
+                scrollController: controller,
+                panelController: panelController,
+              ),
+              body: SlidingBody(
+                panelController: panelController,
+              ),
+              onPanelSlide: (position) => setState(() {
+                double tmp = MapModel.to.panelHeight.value -
+                    MapModel.to.slidingPanelMinH.value;
+                _fabHeight =
+                    position * tmp + MapModel.to.slidingPanelMinH.value;
+              }),
             ),
-          ))
-    ]));
+          ),
+          Positioned(
+            left: 15,
+            bottom: _fabHeight + _fabHeightClosed,
+            child: Container(
+              child: Column(
+                children: <Widget>[
+                  Container(
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        boxShadow: [
+                          BoxShadow(
+                              offset: Offset(3, 4),
+                              spreadRadius: 1.0,
+                              blurRadius: 5.0,
+                              color: Colors.grey),
+                        ]),
+                    child: Material(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                      color: CustomColor.primary,
+                      child: InkWell(
+                        onTap: () {
+                          MapModel.to.mapController?.animateCamera(
+                              CameraUpdate.zoomTo(
+                                  ++MapModel.to.cameraZoom.value));
+                        },
+                        child: Container(
+                          width: _screenWidth * 0.13,
+                          height: _screenHeight * 0.06,
+                          child: Icon(
+                            Icons.add,
+                            size: _screenWidth * 0.08,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    height: _screenHeight * 0.01,
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        boxShadow: [
+                          BoxShadow(
+                              offset: Offset(3, 4),
+                              spreadRadius: 1.0,
+                              blurRadius: 5.0,
+                              color: Colors.grey),
+                        ]),
+                    child: Material(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                      color: CustomColor.primary,
+                      child: InkWell(
+                        onTap: () {
+                          MapModel.to.mapController?.animateCamera(
+                              CameraUpdate.zoomTo(
+                                  --MapModel.to.cameraZoom.value));
+                        },
+                        child: Container(
+                          width: _screenWidth * 0.13,
+                          height: _screenHeight * 0.06,
+                          child: Icon(
+                            Icons.remove,
+                            size: _screenWidth * 0.08,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Obx(
+            //여기를 수정해야함
+            () => Positioned(
+              bottom: _fabHeight,
+              //지금 여기 때문에 무한 루프돌고있음
+              child: MapModel.to.slidingPanelMinH != 0.0
+                  ? Image.file(
+                      MapModel.to.image!,
+                      width: _screenWidth,
+                      height: _screenHeight * 0.25,
+                      fit: BoxFit.fitWidth,
+                    )
+                  : Container(),
+            ),
+          )
+        ]));
   }
 }

@@ -5,6 +5,7 @@ import 'package:gdsc_solution/screen/myPage/my_page.dart';
 import 'package:gdsc_solution/screen/main/main.dart';
 import 'package:gdsc_solution/screen/myPage/my_profile.dart';
 import 'package:gdsc_solution/screen/news/news.dart';
+import 'package:gdsc_solution/screen/social/social_page.dart';
 import 'package:intl/intl.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,6 +13,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 
 import '../main/main.dart';
+import '../../theme/custom_color.dart';
 
 //로그인 페이지
 class SignIn extends StatefulWidget {
@@ -58,7 +60,7 @@ class _SignInState extends State<SignIn> with SingleTickerProviderStateMixin {
                   child: Column(
                     children: [
                       Image(
-                          width: width * 2 / 3,
+                          width: width * 3 / 5,
                           image: AssetImage(
                             'assets/logo.png',
                           )),
@@ -103,8 +105,8 @@ class _SignInState extends State<SignIn> with SingleTickerProviderStateMixin {
                                       focusedBorder: OutlineInputBorder(
                                           borderSide: BorderSide(
                                               width: 2,
-                                              color: Color.fromARGB(
-                                                  255, 25, 131, 69)),
+                                              color: CustomColor.primary),
+
                                           borderRadius:
                                               BorderRadius.circular(0)),
                                       contentPadding:
@@ -138,8 +140,8 @@ class _SignInState extends State<SignIn> with SingleTickerProviderStateMixin {
                                     focusedBorder: OutlineInputBorder(
                                         borderSide: BorderSide(
                                             width: 2,
-                                            color: Color.fromARGB(
-                                                255, 25, 131, 69)),
+                                            color: CustomColor.primary),
+
                                         borderRadius: BorderRadius.circular(0)),
                                     border: OutlineInputBorder(
                                         borderRadius:
@@ -162,7 +164,6 @@ class _SignInState extends State<SignIn> with SingleTickerProviderStateMixin {
                                 style: TextStyle(
                                     fontSize: 20, fontWeight: FontWeight.bold)),
                             style: ElevatedButton.styleFrom(
-                                primary: Color.fromARGB(255, 0, 105, 49),
                                 elevation: 3,
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30))),
@@ -194,7 +195,7 @@ class _SignInState extends State<SignIn> with SingleTickerProviderStateMixin {
                                 style: TextStyle(
                                     fontSize: 20, fontWeight: FontWeight.bold)),
                             style: ElevatedButton.styleFrom(
-                                primary: Color.fromARGB(255, 0, 105, 49),
+                                primary: CustomColor.primary87,
                                 elevation: 3,
                                 shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(30))),

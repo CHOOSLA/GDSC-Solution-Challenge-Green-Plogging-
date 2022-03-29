@@ -1,20 +1,43 @@
+//게시글에 대한 틀
 class Community {
-  final String? id;
-  final String? title;
-  final String? contents;
-  final DateTime? datetime;
-  final String? boardId;
-  final String? userId;
-  final String? like_count;
-  final String? region;
+  String? city;
+  String? map;
+  String? view;
+  DateTime? time;
+  int? distance;
+  int? runTime;
+  int? plogPoint;
+  double? speed;
+  int like_count = 0;
+  String? comment;
+  String? uid;
 
-  Community(
-      {this.id,
-      this.title,
-      this.contents,
-      this.datetime,
-      this.boardId,
-      this.userId,
-      this.like_count,
-      this.region});
+  Community({
+    this.city,
+    this.map,
+    this.view,
+    this.time,
+    this.distance,
+    this.runTime,
+    this.plogPoint,
+    this.speed,
+    this.comment,
+    this.uid
+  });
+
+  Map<String, dynamic> toMap(){
+    return{
+      'city' : city,
+      'map' : map,
+      'view' : view,
+      'time' : time,
+      'distance' : distance,
+      'runTime' : runTime,
+      'plogPoint' : plogPoint,
+      'speed' : speed,
+      'like_count' : like_count,
+      'comment' : comment,
+      'uid' : uid
+    };
+  }
 }
