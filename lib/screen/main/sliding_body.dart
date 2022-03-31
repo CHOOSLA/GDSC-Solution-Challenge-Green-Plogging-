@@ -29,16 +29,19 @@ class _SlidingBodyState extends State<SlidingBody> {
         children: [
           Container(
               child: Obx(
-            () => GoogleMap(
-              markers: MapModel.to.markers,
-              polylines: Set<Polyline>.of(MapModel.to.polyline),
-              zoomControlsEnabled: false,
-              onMapCreated: MapModel.to.onMapCreated,
-              myLocationEnabled: true,
-              initialCameraPosition: CameraPosition(target: _center, zoom: 11),
-              onCameraMove: (cameraPosition) {
-                MapModel.to.cameraPosition = cameraPosition;
-              },
+            () => Container(
+              child: GoogleMap(
+                markers: MapModel.to.markers,
+                polylines: Set<Polyline>.of(MapModel.to.polyline),
+                zoomControlsEnabled: false,
+                onMapCreated: MapModel.to.onMapCreated,
+                myLocationEnabled: true,
+                initialCameraPosition:
+                    CameraPosition(target: _center, zoom: 11),
+                onCameraMove: (cameraPosition) {
+                  MapModel.to.cameraPosition = cameraPosition;
+                },
+              ),
             ),
           )),
           Align(
@@ -55,8 +58,8 @@ class _SlidingBodyState extends State<SlidingBody> {
                 child: InkWell(
                   onTap: () {
                     MapModel.to.mapController!
-                        .animateCamera(CameraUpdate.zoomTo(15.0));
-                    MapModel.to.cameraZoom.value = 15.0;
+                        .animateCamera(CameraUpdate.zoomTo(17.0));
+                    MapModel.to.cameraZoom.value = 17.0;
                     MapModel.to.start.toggle();
                     MapModel.to.startRun();
                     panelController.open();
