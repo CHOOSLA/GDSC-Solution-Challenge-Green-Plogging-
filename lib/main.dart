@@ -1,4 +1,6 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:gdsc_solution/screen/contact_us.dart';
 import 'package:gdsc_solution/screen/login/sign_in.dart';
 import 'package:gdsc_solution/screen/main/main.dart';
 import 'package:gdsc_solution/screen/myPage/my_page.dart';
@@ -40,7 +42,8 @@ class MainApp extends StatelessWidget {
         GetPage(name: '/main/social_page', page: () => SocialPage()),
         GetPage(name: '/main/my_page', page: () => MyPage()),
         GetPage(name: '/main/social', page: () => SocialPage()),
-        GetPage(name: '/main/challenge', page: () => ChallengePage())
+        GetPage(name: '/main/challenge', page: () => ChallengePage()),
+        GetPage(name: '/main/contact_us', page: () => Contact())
       ],
     );
 

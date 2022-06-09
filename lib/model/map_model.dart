@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:camera/camera.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -95,10 +96,16 @@ class MapModel extends GetxController {
 
   final finishState = false.obs;
 
+  // 오브젝트 디텍션을 위한 변수들
+  List<CameraDescription> cameras = [];
+  int? selectedItem;
+  final torch = false.obs;
+
   //여기 수정해야함
   @override
   void onInit() {
     super.onInit();
+    _getCameras();
   }
 
   @override
@@ -232,6 +239,10 @@ class MapModel extends GetxController {
     start.toggle();
   }
 
+  Future<void> _getCameras() async {
+    cameras = await availableCameras();
+  }
+
   //canvas로 그려서 가져오기
   Future<Uint8List> getBytesFromCanvas(double radius, Color color) async {
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
@@ -339,14 +350,19 @@ class MapModel extends GetxController {
 
     //유저 totalRun, totalPlog 최신화
     FirebaseFirestore.instance
-    .collection('users')
-    .doc(FirebaseAuth.instance.currentUser!.uid)
-    .update({'totalRun' : FieldValue.increment(tmpDistance!)});
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .update({'totalRun': FieldValue.increment(tmpDistance!)});
 
     FirebaseFirestore.instance
-    .collection('users')
-    .doc(FirebaseAuth.instance.currentUser!.uid)
-    .update({'totalPlog' : FieldValue.increment(tmpPlogPoint!)});
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .update({'totalPlog': FieldValue.increment(tmpPlogPoint!)});
+
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .update({'point': FieldValue.increment(tmpPlogPoint! * 10)});
   }
 
   Future<void> uploadCommunity(String comment) async {
